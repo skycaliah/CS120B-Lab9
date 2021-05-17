@@ -1,7 +1,7 @@
 /*	Author: Skyler Saltos 
  *  Partner(s) Name: 
  *	Lab Section:
- *	Assignment: Lab #9  Exercise #4
+ *	Assignment: Lab #9  Exercise #1
  *	Exercise Description: [optional - include for your own benefit]
  *	Praciting use of concurrent SMs
  *	I acknowledge all content contained herein, excluding template or example
@@ -13,10 +13,9 @@
 #include "simAVRHeader.h"
 #endif
 
-static char blinkingLED; // blinks on and off the single LED
-static char threeLEDs; // determines which of the three LEDS to light
-static char toggleSpeaker; // toggles sound on and off for speaker
-static long freq; // holds frequecny when changing freq for speaker
+static char blinkingLED;
+static char threeLEDs;
+static char toggleSpeaker;
 enum SM1_States { SM1_Start,SM1_OnB3, SM1_OffB3 } SM1_State;
 
 void BlinkingLEDSM() {
@@ -159,57 +158,6 @@ void SpeakerSM() {
    } // State actions
 }//end toggleSpeaker SM
 
-enum SM5_States { SM5_Start,SM5_currFreq, SM5_incrementFreq, SM5_decrementFreq } SM5_State;
-void FrequencyCalculationSM() {
-  
-       unsigned char A0 = PINA & 0x01;
-       unsigned char A1 = PINA & 0x02;
-
-   switch(SM5_State) { // Transitions
-      case SM5_Start:
-         freq = 0x00000002;
-         SM5_State = SM5_currFreq;
-         break;
-      case SM5_currFreq:
-         if (A0 && A1) {
-            SM5_State = SM5_currFreq;
-         }
-         else if (A0 && !A1) {
-            SM5_State = SM5_decrementFreq;
-         }
-         else if (!A0 && A1) {
-            SM5_State = SM5_incrementFreq;
-	 }
-         break;
-      case SM5_incrementFreq:
-            SM5_State = SM5_currFreq;
-         break;
-      case SM5_decrementFreq:
-            SM5_State = SM5_currFreq;
-         break;
-      default:
-         SM5_State = SM5_Start;
-      } // Transitions
-
-   switch(SM5_State) { // State actions
-      case SM5_currFreq:
-         break;
-      case SM5_incrementFreq:
-
-         freq = freq + 0x00000001;
-
-         break;
-      case SM5_decrementFreq:
-         if(freq > 0x00000002 ){
-         
-         freq = freq - 0x00000001;
-         
-         }//sets min freq to 1
-         break;
-      default: // ADD default behaviour below
-         break;
-   } // State actions
-} // end state machine for determine frequency of speaker 
 
 
 
@@ -223,13 +171,11 @@ int main(void) {
 	SM2_State = SM2_Start;
 	SM3_State = SM3_Start;
 	SM4_State = SM4_Start;
-	SM5_State = SM5_Start;
 
-	unsigned long SM1_time = 1000; // the single LED blinks every 1 sec
-	unsigned long SM2_time = 300; // ThreeLEds bling every 300ms
-	unsigned long SM3_time = 1; // SM that combines inputs to output PORTB - change to one due to updated code with speaker
-	unsigned long SM4_time = freq; // speaker frequency determined by period 
-	unsigned long SM5_time = 1; // period for incrementing and decrementing speaker
+	unsigned long SM1_time = 1000;
+	unsigned long SM2_time = 300;
+	unsigned long SM3_time = 1; // change to one due to updated code with speaker
+	unsigned long SM4_time = 2;
 	const unsigned long period = 1;
 
 
@@ -254,18 +200,12 @@ int main(void) {
 		SM3_time = 0;
 	}//one tick of thrid SM
 
-	if(SM4_time >= freq ){
+	if(SM4_time >= 2){
 		SpeakerSM();
 		SM4_time = 0;
 
 	}//one tick for foruth SM
 
-	if(SM5_time >= 1){
-		FrequencyCalculationSM();
-		SM5_time = 0;
-
-
-	}//one tick for fift SM
 	
 
 	while(!TimerFlag); // wait 1 msec before continuing
@@ -274,7 +214,6 @@ int main(void) {
 	SM2_time += period;
 	SM3_time += period;
 	SM4_time += period;
-	SM5_time += period;
     }
     return 1;
 }
